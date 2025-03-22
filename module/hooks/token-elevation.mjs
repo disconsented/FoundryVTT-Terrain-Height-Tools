@@ -19,8 +19,8 @@ export function handleTokenElevationChange(tokenDoc, delta, _, userId) {
 	if (!token) return;
 
 	// If the token position or size hasn't changed, do nothing
-	// If the elevation has been manually changed, do nothing (i.e. let that change take priority)
-	if (["x", "y", "width", "height"].every(p => !(p in delta)) || "elevation" in delta) return;
+	// _Don't_ exit early if elevation is present, invert from vanilla behaviour. 
+	if (["x", "y", "width", "height"].every(p => !(p in delta))) return;
 
 	// Get highest terrain before move
 	const terrainHeight1 = getHighestTerrainUnderToken(token);
