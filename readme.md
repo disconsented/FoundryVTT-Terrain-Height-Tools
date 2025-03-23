@@ -12,6 +12,10 @@ Designed for LANCER, _Terrain Height Tools_ takes inspiration from the way paint
 
 ![Map preview](./docs/img/overview.webp)
 
+# Note
+
+This is a fork of the original THT that aims to work around an incompatibility with Elevation Ruler, see https://github.com/Wibble199/FoundryVTT-Terrain-Height-Tools/issues/21 for details.
+
 ## Installation
 
 Simply search for 'Terrain Height Tools' in the Foundry 'Install Module' screen and install it from there.
