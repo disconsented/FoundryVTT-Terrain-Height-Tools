@@ -18,9 +18,7 @@ This is a fork of the original THT that aims to work around an incompatibility w
 
 ## Installation
 
-Simply search for 'Terrain Height Tools' in the Foundry 'Install Module' screen and install it from there.
-
-Alternatively, paste this URL into the 'Manifest URL' field of the 'Install Module' dialog in the Foundry configuration: `https://github.com/disconsented/FoundryVTT-Terrain-Height-Tools/releases/latest/download/module.json`, then enable the module in your world.
+Paste this URL into the 'Manifest URL' field of the 'Install Module' dialog in the Foundry configuration: `https://github.com/disconsented/FoundryVTT-Terrain-Height-Tools/releases/latest/download/module.json`, then enable the module in your world.
 
 ## Usage
 
