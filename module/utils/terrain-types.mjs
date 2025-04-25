@@ -1,4 +1,4 @@
-import { lineTypes, moduleName, settings } from '../consts.mjs';
+import { flags, lineTypes, moduleName, settings } from '../consts.mjs';
 import { alphaToHex } from "./misc-utils.mjs";
 
 /**
@@ -15,6 +15,9 @@ import { alphaToHex } from "./misc-utils.mjs";
  * @property {number} lineOpacity
  * @property {number} lineDashSize
  * @property {number} lineGapSize
+ * @property {number} lineFadeDistance
+ * @property {string} lineFadeColor
+ * @property {number} lineFadeOpacity
  * @property {number} fillType
  * @property {string} fillColor
  * @property {number} fillOpacity
@@ -27,6 +30,8 @@ import { alphaToHex } from "./misc-utils.mjs";
  * @property {number} textSize
  * @property {string} textColor
  * @property {number} textOpacity
+ * @property {number | null} defaultHeight
+ * @property {number | null} defaultElevation
  */
 
 /**
@@ -48,6 +53,9 @@ export function createDefaultTerrainType(id = undefined) {
 		lineOpacity: 0.8,
 		lineDashSize: 15,
 		lineGapSize: 10,
+		lineFadeDistance: 0,
+		lineFadeColor: "#FF0000",
+		lineFadeOpacity: 0.4,
 		fillType: CONST.DRAWING_FILL_TYPES.SOLID,
 		fillColor: "#FF0000",
 		fillOpacity: 0.2,
@@ -59,7 +67,9 @@ export function createDefaultTerrainType(id = undefined) {
 		font: CONFIG.defaultFontFamily,
 		textSize: 48,
 		textColor: "#FFFFFF",
-		textOpacity: 1
+		textOpacity: 1,
+		defaultHeight: null,
+		defaultElevation: null
 	};
 }
 
@@ -127,4 +137,29 @@ export function getCssColorsFor(terrainType) {
 			? 0
 			: terrainType.lineWidth,
 	};
+}
+
+/**
+ * Returns a set of which terrain types are NOT currently visibile on the scene.
+ * @param {Scene} scene
+ * @returns {Set<string>}
+ */
+export function getInvisibleSceneTerrainTypes(scene) {
+	return new Set(scene.getFlag(moduleName, flags.invisibleTerrainTypes) ?? []);
+}
+
+/**
+ * Updates the passed scene so that the specified terrainTypeId is either visible or invisible.
+ * @param {Scene} scene
+ * @param {string} terrainTypeId
+ * @param {boolean} [force] Whether the terrain type should be visible or not. Or undefined to toggle.
+ */
+export async function setSceneTerrainTypeVisible(scene, terrainTypeId, force = undefined) {
+	/** @type {string[]} */
+	const invisibleSceneTerrainTypes = scene.getFlag(moduleName, flags.invisibleTerrainTypes) ?? [];
+
+	if ((force === true || force === undefined) && !invisibleSceneTerrainTypes.includes(terrainTypeId))
+		await scene.setFlag(moduleName, flags.invisibleTerrainTypes, [...invisibleSceneTerrainTypes, terrainTypeId]);
+	else if ((force === false || force === undefined) && invisibleSceneTerrainTypes.includes(terrainTypeId))
+		await scene.setFlag(moduleName, flags.invisibleTerrainTypes, invisibleSceneTerrainTypes.filter(t => t !== terrainTypeId));
 }

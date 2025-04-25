@@ -4,6 +4,7 @@ export const socketName = `module.${moduleName}`;
 
 export const defaultGroupName = "default";
 
+export const wallHeightModuleName = "wall-height";
 
 /** @enum {keyof typeof tools} */
 export const tools = /** @type {const} */ ({
@@ -13,7 +14,8 @@ export const tools = /** @type {const} */ ({
 	eraseShape: "eraseShape",
 	lineOfSight: "terrainHeightToolsLineOfSight",
 	tokenLineOfSight: "terrainHeightToolsTokenLineOfSight",
-	convert: "convert"
+	convert: "convert",
+	terrainVisibility: "terrainVisibility"
 });
 
 /** @enum {keyof typeof settings} */
@@ -46,6 +48,7 @@ export const keybindings = /** @type {const} */ ({
 /** @enum {keyof typeof flags} */
 export const flags = /** @type {const} */ ({
 	heightData: "heightData",
+	invisibleTerrainTypes: "invisibleTerrainTypes",
 	terrainLayerAboveTiles: "terrainLayerAboveTiles"
 });
 

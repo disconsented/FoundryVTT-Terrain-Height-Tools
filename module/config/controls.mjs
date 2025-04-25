@@ -2,6 +2,7 @@ import { LineOfSightRulerConfig } from '../applications/line-of-sight-ruler-conf
 import { ShapeConversionConifg } from "../applications/shape-conversion-config.mjs";
 import { TerrainErasePalette } from "../applications/terrain-erase-palette.mjs";
 import { TerrainPaintPalette } from "../applications/terrain-paint-palette.mjs";
+import { TerrainVisibilityConfig } from "../applications/terrain-visibility-config.mjs";
 import { TokenLineOfSightConfig } from "../applications/token-line-of-sight-config.mjs";
 import { moduleName, settings, tools } from "../consts.mjs";
 import { LineOfSightRulerLayer } from "../layers/line-of-sight-ruler-layer.mjs";
@@ -29,6 +30,9 @@ export const sceneControls = {
 
 	/** @type {TokenLineOfSightConfig | undefined} */
 	tokenLineOfSightConfig: undefined,
+
+	/** @type {TerrainVisibilityConfig | undefined} */
+	terrainVisibilityConfig: undefined,
 
 	/** @type {ShapeConversionConifg | undefined} */
 	shapeConversionConfig: undefined
@@ -97,6 +101,11 @@ export function registerSceneControls(controls) {
 				icon: "fas fa-eye-dropper"
 			},
 			{
+				name: tools.terrainVisibility,
+				title: game.i18n.localize("CONTROLS.TerrainHeightToolsTerrainVisibility"),
+				icon: "fas fa-eye-slash"
+			},
+			{
 				name: tools.convert,
 				title: game.i18n.localize("CONTROLS.TerrainHeightToolsShapeConvert"),
 				icon: "fas fa-arrow-turn-right"
@@ -105,11 +114,15 @@ export function registerSceneControls(controls) {
 				name: "clear",
 				title: game.i18n.localize("CONTROLS.TerrainHeightToolsClear"),
 				icon: "fas fa-trash",
-				onClick: () => Dialog.confirm({
-					title: game.i18n.localize("TERRAINHEIGHTTOOLS.ClearConfirmTitle"),
-					content: `<p>${game.i18n.format("TERRAINHEIGHTTOOLS.ClearConfirmContent")}</p>`,
-					yes: () => TerrainHeightLayer.current?.clear()
-				}),
+				onClick: async () => {
+					const shouldDelete = await foundry.applications.api.DialogV2.confirm({
+						window: { title: "TERRAINHEIGHTTOOLS.ClearConfirmTitle" },
+						content: `<p>${game.i18n.format("TERRAINHEIGHTTOOLS.ClearConfirmContent")}</p>`,
+						rejectClose: false
+					});
+
+					if (shouldDelete) TerrainHeightLayer.current?.clear();
+				},
 				button: true
 			}
 		]
@@ -151,6 +164,12 @@ export function renderToolSpecificApplications(controls) {
 		sceneControls.tokenLineOfSightConfig,
 		() => sceneControls.tokenLineOfSightConfig = new TokenLineOfSightConfig());
 
+	// Show the visibility config if the visibility tool is selected
+	renderToolSpecificApplication(
+		controls.activeControl === moduleName && controls.activeTool === tools.terrainVisibility,
+		sceneControls.terrainVisibilityConfig,
+		() => sceneControls.terrainVisibilityConfig = new TerrainVisibilityConfig());
+
 	// Show the conversion config if the convert tool is selected
 	renderToolSpecificApplication(
 		controls.activeControl === moduleName && controls.activeTool === tools.convert,
@@ -175,10 +194,10 @@ function renderToolSpecificApplication(condition, application, factory) {
 
 		// Only position it once so that if the user moves it, we keep it in the same place
 		Hooks.once(`render${application.constructor.name}`, () => {
-			const { left } = $('#ui-right').position();
+			const left = ui.sidebar?.element[0].getBoundingClientRect()?.left;
 			application.setPosition({
 				top: 5,
-				left: left - application.constructor.defaultOptions.width - 15
+				left: left - application.constructor.DEFAULT_OPTIONS.position.width - 7
 			});
 		});
 

@@ -1,22 +1,8 @@
 /* ------------------------- */
 /* Common Tool Window Styles */
 /* ------------------------- */
-.terrain-height-tool-window {
-	position: absolute;
-	margin: 0 0 0 10px;
-}
-
-.terrain-height-tool-window .window-content {
-	background: none;
-}
-
-.terrain-height-tool-window p,
-.terrain-height-tool-window span,
-.terrain-height-tool-window ul,
-.terrain-height-tool-window input,
-.terrain-height-tool-window label,
-.terrain-height-tool-window a {
-	color: #FFFFFF;
+.terrain-height-tool-window.window-content {
+	padding: 0.5rem;
 }
 
 .terrain-height-tool-window hr {
@@ -41,7 +27,6 @@
 }
 
 .terrain-height-tool-window .tht-form-group-hint {
-	color: #FFFFFF;
 	cursor: help;
 }
 
@@ -131,15 +116,9 @@ ul.terrain-type-palette li .terrain-type-name {
 /* Terrain Stack Viewer */
 /* -------------------- */
 #tht_terrainStackViewer {
+	position: static;
 	width: 240px;
 	margin: 0 4px 4px auto;
-	padding: 4px;
-	border: 1px solid var(--color-border-dark);
-}
-
-#tht_terrainStackViewer h3 {
-	border-bottom: 0;
-	margin: 4px 6px 0;
 }
 
 #tht_terrainStackViewer .terrain-layer-block {
@@ -161,160 +140,163 @@ ul.terrain-type-palette li .terrain-type-name {
 
 #tht_terrainStackViewer .axis-line {
 	stroke-width: 1;
-	stroke: #FFFFFF44;
+	stroke: rgb(255 255 255 / 25%);
+}
+
+.theme-light #tht_terrainStackViewer .axis-line {
+	stroke: rgb(0 0 0 / 25%);
 }
 
 #tht_terrainStackViewer .axis-line-label {
 	font-size: 14px;
-	fill: #FFFFFF44;
+	fill: rgb(255 255 255 / 25%);
 }
 
-#tht_terrainStackViewer hr {
-	border-top: 2px groove var(--color-border-dark-secondary);
-	border-bottom: none;
+.theme-light #tht_terrainStackViewer .axis-line-label {
+	fill: rgb(0 0 0 / 25%);
+}
+
+#tht_terrainStackViewer .shape-label,
+#tht_terrainStackViewer .terrain-layer-block-title,
+#tht_terrainStackViewer .terrain-layer-block-height {
+	text-shadow: 0 0 3px #000000;
 }
 
 
 /* -------------------- */
 /* Terrain Types Config */
 /* -------------------- */
-#tht_terrainTypesConfig form {
-	height: 100%;
-	display: flex;
-	flex-direction: column;
+#tht_terrainTypesConfig,
+#tht_terrainTypesConfig .window-content {
+	overflow: visible;
 }
 
-#tht_terrainTypesConfig form > p {
-	flex: 0;
+#tht_terrainTypesConfig main {
+	flex: 1 1 auto;
+}
+
+#tht_terrainTypesConfig hr {
+	margin: 0.5rem 0;
+	border-top: 1px solid rgb(135 135 135 / 25%);
+	background: none;
+}
+
+#tht_terrainTypesConfig .sheet-tabs {
+	border-color: rgb(135 135 135 / 25%);
+}
+
+#tht_terrainTypesConfig .terrain-type-list-container {
+	flex: 1 1 0;
+	display: flex;
+	align-items: stretch;
+	min-height: 0;
+	gap: 1rem;
+}
+
+#tht_terrainTypesConfig .terrain-type-list,
+#tht_terrainTypesConfig .terrain-type-edit-pane {
+	overflow-y: auto;
 }
 
 #tht_terrainTypesConfig .terrain-type-list {
+	flex: 0 0 320px;
 	list-style: none;
+	margin: 0;
 	padding: 0;
-	margin: 8px 0;
-	overflow-y: scroll;
+}
+
+#tht_terrainTypesConfig .terrain-type-list-vertical-separator {
+	border-right: 4px double rgb(135 135 135 / 25%);
+}
+
+#tht_terrainTypesConfig .terrain-type-list > li {
+	display: flex;
+	gap: 0.25rem;
+	padding: 0.3rem;
+	margin-bottom: 0.25rem;
+	cursor: pointer;
+	align-items: center;
+	border-top: 1px solid transparent;
+	border-bottom: 1px solid transparent;
+}
+
+#tht_terrainTypesConfig .terrain-type-list > li > span {
 	flex: 1 1 0;
 }
 
-#tht_terrainTypesConfig .terrain-type-list li {
-	padding: 6px;
-	border: 1px solid var(--color-border-light-primary);
-	border-radius: 3px;
-	box-shadow: 0px 0px 4px -1px rgba(0, 0, 0, 0.5);
+#tht_terrainTypesConfig .terrain-type-list > li > button {
+	flex: 0 0 24px;
+	height: 24px;
+	padding: 0;
+	font-size: var(--font-size-12);
+	line-height: 24px;
 }
 
-#tht_terrainTypesConfig .terrain-type-list li:not(:first-child) {
-	margin-top: 8px;
-}
-
-#tht_terrainTypesConfig .terrain-type-header > button {
-	flex: 0 0 30px;
-}
-
-#tht_terrainTypesConfig .terrain-type-header > input {
-	height: auto;
-	margin: 0 3px 1px;
-}
-
-#tht_terrainTypesConfig .terrain-type-content {
-	display: grid;
-	grid-template-rows: repeat(2, min-content);
-	grid-template-columns: 1fr min-content 1fr min-content 1fr;
-	grid-gap: 8px;
-	margin: 8px 0;
-}
-
-#tht_terrainTypesConfig .terrain-type-content.collapsed {
-	display: none;
-}
-
-#tht_terrainTypesConfig .terrain-type-content .vertical-separator {
-	border-left: 2px groove #FFFFFF;
-}
-
-#tht_terrainTypesConfig .terrain-type-content .terrain-type-content-full-width {
-	grid-column: 1 / 6;
-	display: flex;
-}
-
-#tht_terrainTypesConfig .terrain-type-content .terrain-type-content-full-width > div {
-	display: flex;
-	align-items: center;
-}
-
-#tht_terrainTypesConfig .terrain-type-content .terrain-type-content-full-width > div:not(:first-child) {
-	margin-left: 16px;
-}
-
-#tht_terrainTypesConfig .terrain-type-content .form-group input[type="checkbox"] {
-	margin-left: 0;
-}
-
-#tht_terrainTypesConfig textarea.autoresize {
-	min-height: auto;
-	resize: vertical;
-	field-sizing: content;
-}
-
-#tht_terrainTypesConfig .form-group-stacked:has(> .focus-tooltip) {
-	position: relative;
-}
-
-#tht_terrainTypesConfig .focus-tooltip {
-	position: absolute;
-	top: calc(100% + 1px);
-	z-index: var(--z-index-tooltip);
-	pointer-events: none;
-	transition: opacity 250ms ease-out;
-}
-
-#tht_terrainTypesConfig .has-focus-tooltip:not(:focus) + .focus-tooltip {
-	opacity: 0;
-}
-
-#tht_terrainTypesConfig .has-focus-tooltip:focus + .focus-tooltip {
-	opacity: 1;
-}
-
-#tht_terrainTypesConfig .label-placeholder-tooltip {
-	top: 16px;
-	right: calc(100% + 4px);
-	width: 280px;
-	padding: 4px 6px 6px;
-	background: #ededed;
-	color: var(--color-text-dark-primary);
-	border: 1px solid var(--color-border-highlight-alt);
-	border-radius: 3px;
-	font-size: var(--font-size-13);
-    box-shadow: 0 0 4px #000000, 0 0 6px inset var(--color-shadow-highlight);
-}
-
-#tht_terrainTypesConfig .label-placeholder-tooltip table {
+#tht_terrainTypesConfig .terrain-type-list > li > button > i {
 	margin: 0;
 }
 
-#tht_terrainTypesConfig .label-placeholder-tooltip table th {
-	width: 1px;
-	padding-right: 6px;
-	font-family: Consolas, Courier New, Courier, monaco, monospace;
+#tht_terrainTypesConfig .terrain-type-list > li:hover {
+	border-color: var(--color-border-dark-secondary);
 }
 
-#tht_terrainTypesConfig file-picker {
-	align-items: stretch;
+#tht_terrainTypesConfig .terrain-type-list > li.active {
+	border-color: var(--color-border-highlight);
+}
+
+#tht_terrainTypesConfig .terrain-type-edit-pane {
+	flex: 1 1 0;
+	padding-right: 0.5rem;
+}
+
+#tht_terrainTypesConfig textarea {
+	min-height: auto;
+	padding: 0.5rem 1rem;
+	resize: vertical;
+	field-sizing: content;
+	background: var(--color-cool-4);
+	border: 1px solid transparent;
+}
+
+.theme-light #tht_terrainTypesConfig textarea {
+	background: rgba(0, 0, 0, 0.1);
+	border: 1px solid var(--color-dark-6);
+}
+
+#tht_terrainTypesConfig .form-field-hint-icon {
+	flex: 0 0 min-content;
+	margin-left: 0.25rem;
+	cursor: help;
+}
+
+#tooltip.tht_terrainTypesConfig_label-placeholder-tooltip {
+	font-size: var(--font-size-14);
+}
+
+#tooltip.tht_terrainTypesConfig_label-placeholder-tooltip table {
+	margin: 0;
+}
+
+#tooltip.tht_terrainTypesConfig_label-placeholder-tooltip table tr:nth-child(odd) {
+	background-color: rgba(255, 255, 255, 0.05);
+}
+
+#tooltip.tht_terrainTypesConfig_label-placeholder-tooltip table tr:nth-child(even) {
+	background-color: rgba(255, 255, 255, 0.1);
 }
 
 
 /* --------------------------- */
 /* Terrain Types Import/Export */
 /* --------------------------- */
-#tht_terrainTypesImport .dialog-buttons,
-#tht_terrainTypesExport .dialog-buttons {
-	flex: 0;
+#tht_terrainTypesImport .dialog-form,
+#tht_terrainTypesExport .dialog-form {
+	height: 100%;
 }
 
 #tht_terrainTypesImport .dialog-content,
 #tht_terrainTypesExport .dialog-content {
-	padding-bottom: 8px;
+	flex: 1 1 0;
 }
 
 #tht_terrainTypesImport textarea,
@@ -338,21 +320,36 @@ ul.terrain-type-palette li .terrain-type-name {
 	padding: 6px;
 	margin: 8px;
 	min-height: 150px;
-
-	border: 1px solid var(--color-border-light-primary);
 	border-radius: 3px;
-	box-shadow: 0px 0px 4px -1px rgba(0, 0, 0, 0.5),
-		0px 0px 60px 0px #FFFFFF inset;
 
 	background-size: cover;
 	background-position: center;
 	background-repeat: no-repeat;
 }
 
+.theme-dark #tht_terrainTypesPresets .preset-list li {
+	border: 1px solid var(--color-border-dark-primary);
+	box-shadow: 0px 0px 4px -1px rgb(0 0 0 / 50%),
+		0px 0px 60px 0px rgb(0 0 0 / 15%) inset;
+}
+
+.theme-light #tht_terrainTypesPresets .preset-list li {
+	border: 1px solid var(--color-border-light-primary);
+	box-shadow: 0px 0px 4px -1px rgb(0 0 0 / 50%),
+		0px 0px 60px 0px #FFFFFF inset;
+}
+
 #tht_terrainTypesPresets .preset-header {
 	margin: -6px;
     padding: 6px;
-	background: rgba(255, 255, 255, 0.7);
+}
+
+.theme-dark #tht_terrainTypesPresets .preset-header {
+	background: rgb(11 10 19 / 62%);
+}
+
+.theme-light #tht_terrainTypesPresets .preset-header {
+	background: rgb(240 240 240 / 70%);
 }
 
 #tht_terrainTypesPresets .preset-name {
@@ -370,6 +367,10 @@ ul.terrain-type-palette li .terrain-type-name {
 #tht_terrainTypesPresets .preset-import-buttons button {
 	display: inline-block;
 	width: auto;
+}
+
+.theme-light #tht_terrainTypesPresets .preset-import-buttons button {
+	background: rgb(230 230 230 / 80%);
 }
 
 
@@ -394,8 +395,15 @@ ul.terrain-type-palette li .terrain-type-name {
 	margin-bottom: 6px;
 	padding: 2px;
 	border-radius: 3px;
-	border: 1px solid rgba(0, 0, 0, 0.7);
-	box-shadow: 0 0 6px inset rgba(0, 0, 0, 0.7);
+}
+
+.theme-dark #tht_tokenLineOfSightConfig .token-selection-container {
+	background: var(--color-cool-4);
+}
+
+.theme-light #tht_tokenLineOfSightConfig .token-selection-container {
+	background: rgb(0 0 0 / 10%);
+	border: 1px solid var(--color-dark-6);
 }
 
 #tht_tokenLineOfSightConfig .token-selection-container.is-selecting-token {
@@ -432,10 +440,11 @@ ul.terrain-type-palette li .terrain-type-name {
 	display: grid;
 	grid-template-columns: repeat(3, 172px);
 	gap: 8px;
+	margin-bottom: 1rem;
 }
 
-.terrain-shape-choice-hint-text {
-	margin-top: 0;
+.terrain-shape-choice-dialog .terrain-shape-choice-hint-text {
+	margin-top: 0 !important;
 
 	/* Max-width of the hint should be equal to the width of the above .terrain-shape list.
 	If it is allowed to grow longer then it will stretch the dialog.
@@ -451,14 +460,25 @@ ul.terrain-type-palette li .terrain-type-name {
 	width: 172px;
 	height: 172px;
 	padding: 4px;
-	border: 1px solid var(--color-border-light-primary);
-	border-radius: 5px;
-	box-shadow: 0px 0px 4px -1px rgba(0, 0, 0, 0.5);
+	background: var(--color-cool-5-50);
+	color: var(--color-light-3);
+	border: 1px solid var(--color-light-5);
+	border-radius: 4px;
+}
+
+.theme-light .terrain-shape-choice-dialog .terrain-shape-list-item {
+	background: rgb(0 0 0 / 10%);
+	color: var(--color-dark-1);
+	border-color: 1px solid var(--color-dark-5);
+}
+
+.terrain-shape-choice-dialog .terrain-shape-list-item:hover {
+	box-shadow: 0 0 5px var(--color-shadow-primary);
 }
 
 .terrain-shape-choice-dialog .terrain-shape-list-radio:checked + .terrain-shape-list-item {
 	border-color: var(--color-border-highlight-alt);
-	box-shadow: 0px 0px 4px -1px rgba(0, 0, 0, 0.5), 0 0 6px inset var(--color-shadow-highlight);
+	box-shadow: 0px 0px 4px -1px rgb(0 0 0 / 50%), 0 0 6px inset var(--color-shadow-highlight);
 }
 
 .terrain-shape-choice-dialog .terrain-shape-list-item > p {
@@ -504,4 +524,12 @@ ul.terrain-type-palette li .terrain-type-name {
 .margin-x-auto {
 	margin-left: auto;
 	margin-right: auto;
+}
+
+.gap-1rem {
+	gap: 1rem;
+}
+
+.cursor-help {
+	cursor: help;
 }

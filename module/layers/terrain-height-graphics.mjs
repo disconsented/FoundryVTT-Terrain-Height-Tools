@@ -1,12 +1,13 @@
-import { flags, lineTypes, moduleName, settings } from "../consts.mjs";
+import { sceneControls } from "../config/controls.mjs";
+import { flags, lineTypes, moduleName, settings, tools } from "../consts.mjs";
 import { HeightMap, LineSegment, Point, Polygon } from "../geometry/index.mjs";
 import { chunk } from '../utils/array-utils.mjs';
 import { toSceneUnits } from "../utils/grid-utils.mjs";
 import { debug } from "../utils/log.mjs";
 import { prettyFraction } from "../utils/misc-utils.mjs";
-import { drawDashedPath } from "../utils/pixi-utils.mjs";
+import { drawDashedPath, drawInnerFade } from "../utils/pixi-utils.mjs";
 import { join, Signal } from "../utils/signal.mjs";
-import { getTerrainTypeMap } from '../utils/terrain-types.mjs';
+import { getInvisibleSceneTerrainTypes, getTerrainTypeMap } from '../utils/terrain-types.mjs';
 import { TerrainHeightLayer } from "./terrain-height-layer.mjs";
 
 /**
@@ -55,7 +56,7 @@ export class TerrainHeightGraphics extends PIXI.Container {
 
 		this.#subsciptions = [
 			join(() => this.#updateShapeMasks(), this.isLayerActive$, this.isHighlightingObjects$, this.maskRadius$),
-			join(() => this.#updateShapesVisibility(), this.isLayerActive$, this.showOnTokenLayer$)
+			join(() => this._updateShapesVisibility(), this.isLayerActive$, this.showOnTokenLayer$, sceneControls.activeTool$)
 		];
 	}
 
@@ -67,11 +68,16 @@ export class TerrainHeightGraphics extends PIXI.Container {
 	get elevation() { return 0; }
 
 	get sortLayer() {
+		// Note that during the v11 -> v12 migration, I made the mistake of getting this setting backwards, so when this
+		// value is TRUE that actually means that the terrain layer should be rendered BELOW the tiles.
+		// The UI labels have been corrected so that users have the expected behaviour, but the name of the flags and
+		// settings have not been changed so that users do not have to re-do their config.
+		// Will fix if there are ever any more breaking changes (such as a v13 port).
 		/** @type {boolean} */
-		const renderAboveTiles = canvas.scene?.getFlag(moduleName, flags.terrainLayerAboveTiles)
+		const renderBelowTiles = canvas.scene?.getFlag(moduleName, flags.terrainLayerAboveTiles)
 			?? game.settings.get(moduleName, settings.terrainLayerAboveTilesDefault);
 
-		return renderAboveTiles ? 490 : 510;
+		return renderBelowTiles ? 490 : 510;
 	}
 
 	/**
@@ -121,7 +127,7 @@ export class TerrainHeightGraphics extends PIXI.Container {
 		}
 
 		this.#updateShapeMasks();
-		this.#updateShapesVisibility();
+		this._updateShapesVisibility({ animate: false });
 	}
 
 	_tearDown() {
@@ -155,10 +161,25 @@ export class TerrainHeightGraphics extends PIXI.Container {
 			: format;
 	}
 
-	async #updateShapesVisibility() {
-		// Shapes should be visible if the THT layer is active, or if shapes are turned on for other layers.
-		const visible = this.isLayerActive$.value || this.showOnTokenLayer$.value;
-		await Promise.all(this.#shapes.map(s => s._setVisible(visible)));
+	/**
+	 * @param {Object} [options]
+	 * @param {boolean} [options.animate]
+	*/
+	async _updateShapesVisibility({ animate = true } = {}) {
+		const invisibleTerrainTypes = getInvisibleSceneTerrainTypes(canvas.scene);
+
+		await Promise.all(this.#shapes.map(s => s._setVisible(
+			// All shapes should always be visible if the THT layer is active (EXCEPT when on the visibility tool)
+			(this.isLayerActive$.value && sceneControls.activeTool$.value !== tools.terrainVisibility) ||
+
+			// Shapes should be visible if THT is turned on for other layer or the terrain type is always visible AND
+			// that terrain type is not hidden on this scene
+			(
+				(this.showOnTokenLayer$.value || s._terrainType.isAlwaysVisible) &&
+				!invisibleTerrainTypes.has(s._terrainType.id)
+			),
+			animate
+		)));
 	}
 
 	/**
@@ -230,11 +251,14 @@ export class TerrainHeightGraphics extends PIXI.Container {
 
 class TerrainShapeGraphics extends PIXI.Container {
 
-	/** @type {import("../geometry/height-map.mjs").HeightMapShape} */
+	/** @type {string} */
+	#graphicId;
+
+	/** @type {import("../geometry/height-map-shape.mjs").HeightMapShape} */
 	#shape;
 
  	/** @type {import("../utils/terrain-types.mjs").TerrainType} */
-	#terrainType;
+	_terrainType;
 
 	/** @type {PIXI.Graphics} */
 	#graphics;
@@ -249,15 +273,16 @@ class TerrainShapeGraphics extends PIXI.Container {
 	#textureMatrix;
 
 	/**
-	 * @param {import("../geometry/height-map.mjs").HeightMapShape} shape
+	 * @param {import("../geometry/height-map-shape.mjs").HeightMapShape} shape
 	 * @param {import("../utils/terrain-types.mjs").TerrainType} terrainType
 	 * @param {{ texture: PIXI.Texture; matrix: PIXI.Matrix; } | undefined} texture
 	*/
 	constructor(shape, terrainType, texture) {
 		super();
 
+		this.#graphicId = foundry.utils.randomID();
 		this.#shape = shape;
-		this.#terrainType = terrainType;
+		this._terrainType = terrainType;
 		this.#texture = texture?.texture;
 		this.#textureMatrix = texture?.matrix;
 
@@ -267,32 +292,35 @@ class TerrainShapeGraphics extends PIXI.Container {
 		this.#label = this.addChild(this.#createLabel());
 	}
 
-	async _setVisible(visible) {
-		// Only change the visibility if this terrain type allows that
-		if (!this.#terrainType.isAlwaysVisible)
+	/**
+	 * @param {boolean} visible
+	 * @param {boolean} animate
+	 */
+	async _setVisible(visible, animate) {
+		if (animate) {
+			const name = `thtShape_${this.#graphicId}_alpha`;
 			await CanvasAnimation.animate([
 				{
 					parent: this,
 					attribute: "alpha",
 					to: visible ? 1 : 0
 				}
-			], { duration: 250 });
+			], { name, duration: 250 });
+		} else {
+			this.alpha = visible ? 1 : 0;
+		}
 	}
 
 	_setMask(mask) {
 		// Only add a mask if this terrain type allows that
-		if (!this.#terrainType.isAlwaysVisible)
+		if (!this._terrainType.isAlwaysVisible)
 			this.mask = mask;
 	}
 
 	#drawGraphics() {
-		// If the line style is dashed, don't draw the lines straight away, as the moveTo/lineTo used to draw the dashed
-		// line makes the holes not work properly.
-		// Instead, do the fill now, then the holes, THEN draw the dashed lines.
-		// If we're using solid or no lines, we don't need to worry about this.
-		this.#setGraphicsStyleFromTerrainType();
-		if (this.#terrainType.lineType === lineTypes.dashed) this.#graphics.lineStyle({ width: 0 });
-
+		// Draw the fill
+		this.#graphics.lineStyle({ width: 0 });
+		this.#setFillStyleFromTerrainType();
 		this.#drawPolygon(this.#shape.polygon);
 
 		for (const hole of this.#shape.holes) {
@@ -301,17 +329,37 @@ class TerrainShapeGraphics extends PIXI.Container {
 			this.#graphics.endHole();
 		}
 
-		// After drawing fill, then do the dashed lines
-		if (this.#terrainType.lineType === lineTypes.dashed) {
-			this.#setGraphicsStyleFromTerrainType();
+		// After drawing the fill, then add the fade effect on top (if enabled)
+		this.#graphics.endFill();
+		const lineStyle = this.#getLineStyleFromTerrainType();
+
+		if (this._terrainType.lineFadeDistance > 0 && this._terrainType.lineFadeOpacity > 0) {
+			const fadeStyle = {
+				color: Color.from(this._terrainType.lineFadeColor ?? "#000000"),
+				alpha: this._terrainType.lineFadeOpacity ?? 0,
+				distance: this._terrainType.lineFadeDistance * canvas.grid.size,
+				resolution: 20
+			};
+
+			drawInnerFade(this.#graphics, this.#shape.polygon.vertices, fadeStyle);
+			for (const hole of this.#shape.holes) drawInnerFade(this.#graphics, hole.vertices, fadeStyle);
+		}
+
+		// After drawing the fill and fade, then do the lines
+		this.#graphics.lineStyle(lineStyle);
+		if (this._terrainType.lineType === lineTypes.dashed) {
 			const dashedLineStyle = {
 				closed: true,
-				dashSize: this.#terrainType.lineDashSize ?? 15,
-				gapSize: this.#terrainType.lineGapSize ?? 10
+				dashSize: this._terrainType.lineDashSize ?? 15,
+				gapSize: this._terrainType.lineGapSize ?? 10
 			};
 
 			drawDashedPath(this.#graphics, this.#shape.polygon.vertices, dashedLineStyle);
 			for (const hole of this.#shape.holes) drawDashedPath(this.#graphics, hole.vertices, dashedLineStyle);
+
+		} else {
+			this.#drawPolygon(this.#shape.polygon);
+			for (const hole of this.#shape.holes) this.#drawPolygon(hole);
 		}
 	}
 
@@ -327,33 +375,35 @@ class TerrainShapeGraphics extends PIXI.Container {
 		this.#graphics.endFill();
 	}
 
-	#setGraphicsStyleFromTerrainType() {
-		const color = Color.from(this.#terrainType.fillColor ?? "#000000");
-		if (this.#terrainType.fillType === CONST.DRAWING_FILL_TYPES.NONE)
+	#setFillStyleFromTerrainType() {
+		const color = Color.from(this._terrainType.fillColor ?? "#000000");
+		if (this._terrainType.fillType === CONST.DRAWING_FILL_TYPES.NONE)
 			this.#graphics.beginFill(0x000000, 0);
-		else if (this.#terrainType.fillType === CONST.DRAWING_FILL_TYPES.PATTERN && this.#texture)
+		else if (this._terrainType.fillType === CONST.DRAWING_FILL_TYPES.PATTERN && this.#texture)
 			this.#graphics.beginTextureFill({
 				texture: this.#texture,
 				color,
-				alpha: this.#terrainType.fillOpacity,
+				alpha: this._terrainType.fillOpacity,
 				matrix: this.#textureMatrix
 			});
 		else
-			this.#graphics.beginFill(color, this.#terrainType.fillOpacity ?? 0.4);
+			this.#graphics.beginFill(color, this._terrainType.fillOpacity ?? 0.4);
+	}
 
-		this.#graphics.lineStyle({
-			width: this.#terrainType.lineType === lineTypes.none ? 0 : this.#terrainType.lineWidth ?? 0,
-			color: Color.from(this.#terrainType.lineColor ?? "#000000"),
-			alpha: this.#terrainType.lineOpacity ?? 1,
+	#getLineStyleFromTerrainType() {
+		return {
+			width: this._terrainType.lineType === lineTypes.none ? 0 : this._terrainType.lineWidth ?? 0,
+			color: Color.from(this._terrainType.lineColor ?? "#000000"),
+			alpha: this._terrainType.lineOpacity ?? 1,
 			alignment: 0
-		});
+		};
 	}
 
 	#createLabel() {
 		const smartPlacement = game.settings.get(moduleName, settings.smartLabelPlacement);
-		const allowRotation = this.#terrainType.textRotation;
+		const allowRotation = this._terrainType.textRotation;
 		const textStyle = this.#getTextStyle();
-		const text = TerrainHeightGraphics._getLabelText(this.#shape, this.#terrainType);
+		const text = TerrainHeightGraphics._getLabelText(this.#shape, this._terrainType);
 
 		// Create the label - with this we can get the width and height
 		const label = new PreciseText(text, textStyle);
@@ -461,10 +511,10 @@ class TerrainShapeGraphics extends PIXI.Container {
 	#getTextStyle() {
 		const style = CONFIG.canvasTextStyle.clone();
 
-		style.fontFamily = this.#terrainType.font ?? CONFIG.defaultFontFamily;
-		style.fontSize = this.#terrainType.textSize;
+		style.fontFamily = this._terrainType.font ?? CONFIG.defaultFontFamily;
+		style.fontSize = this._terrainType.textSize;
 
-		const color = Color.from(this.#terrainType.textColor ?? 0xFFFFFF);
+		const color = Color.from(this._terrainType.textColor ?? 0xFFFFFF);
 		style.fill = color;
 		style.strokeThickness = 4;
 		style.stroke = color.hsv[2] > 0.6 ? 0x000000 : 0xFFFFFF;

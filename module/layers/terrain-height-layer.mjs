@@ -1,5 +1,5 @@
 import { TerrainShapeChoiceDialog } from "../applications/terrain-shape-choice-dialog.mjs";
-import { moduleName, tools } from "../consts.mjs";
+import { flags, moduleName, tools, wallHeightModuleName } from "../consts.mjs";
 import { HeightMap } from "../geometry/height-map.mjs";
 import { convertConfig$, eraseConfig$, paintingConfig$ } from "../stores/drawing.mjs";
 import { Signal } from "../utils/signal.mjs";
@@ -142,12 +142,18 @@ export class TerrainHeightLayer extends InteractionLayer {
 		this.#subscriptions = [];
 	}
 
-	async _onSceneUpdate(scene, data) {
+	async _onSceneUpdate(scene, delta) {
 		// Do nothing if the updated scene is not the one the user is looking at
 		if (scene.id !== canvas.scene.id) return;
 
-		this._heightMap.reload();
-		await this._updateGraphics();
+		// If only the terrain type visiblity settings have changed, just do a visibility update. Otherwise do a full
+		// redraw.
+		if (delta.flags?.[moduleName]?.[flags.invisibleTerrainTypes]) {
+			await this._graphics?._updateShapesVisibility();
+		} else {
+			this._heightMap.reload();
+			await this._updateGraphics();
+		}
 	}
 
 	// ---- //
@@ -246,7 +252,8 @@ export class TerrainHeightLayer extends InteractionLayer {
 
 				const shape = await this.#getSingleShape(...cell, {
 					hint: "TERRAINHEIGHTTOOLS.SelectAShapeCopyHint",
-					submitLabel: "TERRAINHEIGHTTOOLS.CopySelectedShapeConfiguration"
+					submitLabel: "TERRAINHEIGHTTOOLS.CopySelectedShapeConfiguration",
+					submitIcon: "fas fa-eye-dropper"
 				});
 				if (!shape) return;
 
@@ -277,7 +284,8 @@ export class TerrainHeightLayer extends InteractionLayer {
 
 				const shape = await this.#getSingleShape(...cell, {
 					hint: "TERRAINHEIGHTTOOLS.SelectAShapeEraseHint",
-					submitLabel: "TERRAINHEIGHTTOOLS.EraseSelectedShape"
+					submitLabel: "TERRAINHEIGHTTOOLS.EraseSelectedShape",
+					submitIcon: "fas fa-eraser"
 				});
 				if (!shape) return;
 
@@ -291,7 +299,8 @@ export class TerrainHeightLayer extends InteractionLayer {
 
 				const shape = await this.#getSingleShape(...cell, {
 					hint: "TERRAINHEIGHTTOOLS.SelectAShapeConvertHint",
-					submitLabel: "TERRAINHEIGHTTOOLS.ConvertSelectedShape"
+					submitLabel: "TERRAINHEIGHTTOOLS.ConvertSelectedShape",
+					submitIcon: "fas fa-arrow-turn-right"
 				});
 				if (!shape) return;
 
@@ -383,9 +392,10 @@ export class TerrainHeightLayer extends InteractionLayer {
 	 * @param {boolean} [options.toDrawing] Whether to convert the shape to drawings.
 	 * @param {boolean} [options.toRegion] Whether to convert the shape to a new scene region.
 	 * @param {boolean} [options.toWalls] Whether to convert the shape to walls.
+	 * @param {boolean} [options.setWallHeightFlags] Whether to populate Wall Height module flags when converting to walls.
 	 * @param {boolean} [options.deleteAfter] Whether to delete the shape after the conversion.
 	 */
-	async _convertShape(shape, { toDrawing = false, toRegion = false, toWalls = false, deleteAfter = false } = {}) {
+	async _convertShape(shape, { toDrawing = false, toRegion = false, toWalls = false, setWallHeightFlags = true, deleteAfter = false } = {}) {
 		const terrainData = getTerrainType(shape.terrainTypeId);
 		if (!terrainData) return;
 
@@ -469,6 +479,10 @@ export class TerrainHeightLayer extends InteractionLayer {
 		}
 
 		if (toWalls) {
+			const flags = setWallHeightFlags && game.modules.get(wallHeightModuleName)?.active
+				? { "wall-height": { top: shape.top, bottom: shape.bottom } }
+				: {};
+
 			await canvas.scene.createEmbeddedDocuments("Wall", [...shape.polygon.edges, ...shape.holes.flatMap(h => h.edges)]
 				.map(edge => ({
 					c: [
@@ -482,7 +496,8 @@ export class TerrainHeightLayer extends InteractionLayer {
 					light: CONST.WALL_SENSE_TYPES.NORMAL,
 					move: CONST.WALL_SENSE_TYPES.NORMAL,
 					sight: CONST.WALL_SENSE_TYPES.NORMAL,
-					sound: CONST.WALL_SENSE_TYPES.NORMAL
+					sound: CONST.WALL_SENSE_TYPES.NORMAL,
+					flags
 				})));
 		}
 
